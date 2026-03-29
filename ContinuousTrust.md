@@ -229,3 +229,7 @@ This setup provides **True Continuous Trust** because:
 * **Phase 2:** Log-Based Metrics (The Counter).
 * **Phase 3:** Shadow Judge (The Auditor).
 
+## Logistics
+ - Use Python
+ - Always use uv to manage the python virtual environment
+ - Always use genai or adk for google AI development in vertex as detailed in @codegen_instructions.md
