@@ -232,5 +232,9 @@ This setup provides **True Continuous Trust** because:
 ## Logistics
  - Use Python
  - Always use uv to manage the python virtual environment
+- Always use genai or adk for google AI development in vertex as detailed in @codegen_instructions.md
+
+ ## Cloud Deployment
  - Use GCP project prj-continuous-trust-poc
- - Always use genai or adk for google AI development in vertex
+ - Use VertexAI for any google AI model use
+ - Use GCP services like logging, OTEL, telemetry.googleapis.com, cloud run, pubsub, etc

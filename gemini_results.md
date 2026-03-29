@@ -48,3 +48,47 @@ The Judge
    6 !!! [JUDGE] TRUST_VIOLATION: Session budget of 150.0 exceeded for trace ...
 
   This implementation provides a solid foundation for transitioning from static CI/CD to runtime Behavioral Alignment and Continuous Trust.
+
+  ---------
+
+  ## GCP version
+
+  The Log Sink itself is a native Google Cloud feature, but its logic is powered by OTel. 
+
+  Here is how they interact:
+
+   1. OTel as the Producer: The agent (using OTel) instruments the safe_refund_tool. When the tool runs, OTel creates a span containing standardized attributes like
+      gen_ai.call.tool_name.
+   2. GCP as the Carrier: These spans are exported as JSON logs. GCP Cloud Logging captures them and places the OTel attributes into the jsonPayload.attributes field.
+   3. The Log Sink as the "Fence": The sink uses a filter that specifically looks for OTel Semantic Conventions:
+      log-filter='jsonPayload.attributes."gen_ai.call.tool_name"="safe_refund_tool"'
+
+  Why this matters for Continuous Trust:
+  In a traditional setup, you might grep logs for a string like "Refund processed". An agent could "lie" by printing that string without actually running the tool. 
+
+  In this CT architecture, the Judge triggers based on the OTel Instrumentation Layer. Because the tool itself is wrapped in an OTel span, the telemetry is emitted as a side-effect of
+  the execution. The Log Sink is effectively "listening" to the OTel heartbeat of the application to decide when the Shadow Judge needs to wake up and evaluate trust.
+
+  Summary: The Log Sink doesn't run OTel, but it is OTel-Aware—it uses the OTel data structure as its high-fidelity trigger.
+
+
+
+  To deploy the Shadow Judge Cloud Function, you'll need to use the following gcloud command, which specifies the project, region, and Pub/Sub trigger that ties everything together.
+
+   1 gcloud functions deploy shadow-judge-otel \
+   2     --project prj-continuous-trust-poc \
+   3     --region us-central1 \
+   4     --runtime python311 \
+   5     --trigger-topic trust-events \
+   6     --entry-point shadow_judge_otel \
+   7     --gen2 \
+   8     --source ./src/ct_judge
+
+  Key Deployment Factors:
+   * Event-Driven Trigger: By setting --trigger-topic trust-events, this function becomes the "Shadow Judge" from the 2026 spec—it doesn't sit in the agent's path but instead wakes up
+     every time the Cloud Logging Sink "detects" an OTel span from the safe_refund_tool.
+   * Gen2 (Cloud Run powered): This allows for better scaling and performance, ensuring the Judge can keep up with high-volume agent telemetry.
+   * Stateful Governance: Once deployed, the function will use the Firestore client (defined in main.py) to maintain its own independent record of the agent's behavior, fulfilling the
+     goal of an "Out-of-Band Auditor."
+
+  Note: Ensure you've run the setup_gcp.sh script first to create the trust-events topic and the Firestore database!
