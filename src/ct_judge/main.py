@@ -9,8 +9,8 @@ from google.cloud import firestore
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global Firestore client
-db = firestore.Client()
+# Global Firestore client - Explicitly set project to avoid IAM ambiguity
+db = firestore.Client(project="prj-continuous-trust-poc")
 COLLECTION = "ct_sessions"
 BUDGET_LIMIT = 150.0
 
